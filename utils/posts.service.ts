@@ -45,3 +45,11 @@ export const getAllData = async (dateToday: Date) => {
       }
     return datas;
   }
+  interface IUploadToFacebook {
+    id: string;
+    status: string;
+  }
+  export const uploadToFacebook = async (id: string): Promise<IUploadToFacebook> => {
+    console.log("uploadToFacebook", id);
+    return { id, status: "success" };
+  };

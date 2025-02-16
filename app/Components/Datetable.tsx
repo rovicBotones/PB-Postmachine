@@ -3,6 +3,13 @@ import { createColumnHelper, flexRender, getCoreRowModel, getSortedRowModel, use
 import { LiaFacebookSquare  } from "react-icons/lia";
 import dayjs from "dayjs";
 import { Link } from "react-router";
+import { useNavigation, useFetcher } from "react-router";
+import type { ClientRequestArgs } from "http";
+import type { Route } from "../routes/+types/home";
+import { uploadToFacebook } from "utils/posts.service";
+import { useState } from "react";
+import { FaSpinner } from "react-icons/fa";
+import { SiGooglesearchconsole } from "react-icons/si";
 
 const columnHelper = createColumnHelper<News>()
 
@@ -29,32 +36,26 @@ const columns = [
     accessorKey: "Action",
     header: () => <span>Action</span>,
     cell: (cell: any) => {
-      
+      const [loading, setLoading] = useState(false);
+      const uploadRow = async (value: string) => {
+        setLoading(true);
+        const { status } = await uploadToFacebook(value);
+        setTimeout(() => {
+          console.log("clientAction done", status);
+          setLoading(status === "success" ? false : true);
+        }, 2000);
+      }
       return (
         <div className="inline-flex gap-x-2 px-5 py-2">
-          {/* <button type="button" className="rounded-md border border-transparent py-2 px-5 text-center text-sm bg-[#1877F2] hover:bg-sky-700" onClick={
-            () => {
-              <Link to={`/roles/${role.id}`}></Link>
-            }
-          }><LiaFacebookSquare /></button> */}
-          <form id={`delete-form-${cell.row.original.Id}`} method="post" action={`/`}>
-                
-                        <button
-                          form={`delete-form-${cell.row.original.Id}`}
-                          className="w-[70px]"
-                          type="submit"
-                          name="intent"
-                          value="delete"
-                        >
-                          click
-                        </button>
-                      
-              </form>
-          {/* <Link to={`/?postId=${cell.row.original.Id}`}>
-            <button type="button" className="rounded-md border border-transparent py-2 px-5 text-center text-sm bg-[#1877F2] hover:bg-sky-700">
-              <LiaFacebookSquare />
-            </button>
-          </Link> */}
+          <button type="button" className="rounded-md border border-transparent 
+              py-2 px-5 text-center text-sm bg-[#1877F2] hover:bg-sky-700" 
+              disabled={loading}
+              onClick={() => {uploadRow(cell.row.original.Id);
+              }
+              }>
+                {loading ? <FaSpinner className="spinner"/> : <LiaFacebookSquare />}
+          </button>
+          
         </div>
       );
     },

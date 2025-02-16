@@ -1,8 +1,9 @@
 
 import type { Route } from "./+types/home";
-import { getAllData } from "utils/posts.service";
+import { getAllData, uploadToFacebook } from "utils/posts.service";
 import React from "react";
 import Datatable from "~/Components/Datetable";
+import { redirect } from "react-router";
 export function meta({}: Route.MetaArgs) {
   return [
     { title: "Peoples Balita Poster" },
@@ -29,8 +30,8 @@ export async function clientLoader({
     return [];
   }
 }
-export async function clientAction({request}: Route.ClientActionArgs){
-  console.log("clientAction triggered");
+export async function clientAction({request}: Route.ClientActionArgs) {
+  console.log("clientAction triggered", request);
 }
 
 export default function Home({loaderData} : Route.ComponentProps) {
