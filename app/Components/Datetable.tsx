@@ -10,6 +10,7 @@ import { uploadToFacebook } from "utils/posts.service";
 import { useState } from "react";
 import { FaSpinner } from "react-icons/fa";
 import { SiGooglesearchconsole } from "react-icons/si";
+import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from "./ui/table";
 
 const columnHelper = createColumnHelper<News>()
 
@@ -34,7 +35,7 @@ const columns = [
   }),
   {
     accessorKey: "Action",
-    header: () => <span>Action</span>,
+    header: () => <span className="grid place-items-center">Action</span>,
     cell: (cell: any) => {
       const [loading, setLoading] = useState(false);
       const uploadRow = async (value: string) => {
@@ -76,42 +77,44 @@ const Datatable = ({ posts }: News) => {
 
     return (
       <>
-        <table className="table-auto border-collapse border border-spacing-2 border-gray-400">
-            <thead>
+      <div className="p-2 grid mx-100">
+      <Table className="table-auto border-collapse border border-spacing-2 border-gray-400">
+            <TableHeader>
                 {table.getHeaderGroups().map(headerGroup => (
-                <tr key={headerGroup.id}>
+                <TableRow key={headerGroup.id}>
                     {headerGroup.headers.map(header => (
-                    <th className="border border-gray-300" key={header.id}>
+                    <TableHead className="border border-gray-300" key={header.id}>
                         {header.isPlaceholder
                         ? null
                         : flexRender(
                             header.column.columnDef.header,
                             header.getContext()
                             )}
-                    </th>
+                    </TableHead>
                     ))}
-                </tr>
+                </TableRow>
                 ))}
-            </thead>
-            <tbody className="">
+            </TableHeader>
+            <TableBody className="">
                 {table.getRowModel().rows.map(row => (
-                <tr className="" key={row.id}>
+                <TableRow className="" key={row.id}>
                     {row.getVisibleCells().map(cell => (
-                    <td className="border border-gray-300" key={cell.id}>
+                    <TableCell className="border border-gray-300" key={cell.id}>
                         {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                    </td>
+                    </TableCell>
                     ))}
-                </tr>
+                </TableRow>
                 ))}
-            </tbody>
-            <tfoot>
-                <tr>
-                    <td>
+            </TableBody>
+            <TableFooter>
+                <TableRow>
+                    <TableCell>
                       Count: {posts.length}
-                    </td>
-                </tr>
-            </tfoot>
-            </table>
+                    </TableCell>
+                </TableRow>
+            </TableFooter>
+            </Table>
+      </div>
       </>
     );
 

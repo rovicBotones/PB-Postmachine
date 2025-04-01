@@ -12,7 +12,7 @@ export const getAllData = async (dateToday: Date) => {
     const year = dayjs(dateTsss).get('year');
     const data = await request(import.meta.env.VITE_API_URL, gql`
       query NewQuery {
-          posts(first: 100, where: {dateQuery: {year: ${year}, month: ${month}, day: 15 }}) {
+          posts(first: 100, where: {dateQuery: {year: ${year}, month: ${month}, day: ${date} }}) {
             edges {
               node {
                 id
