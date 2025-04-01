@@ -3,7 +3,9 @@ import type { Route } from "./+types/home";
 import { getAllData } from "utils/posts.service";
 import React from "react";
 import Datatable from "~/Components/Datetable";
+import Filter from "~/Components/Filter";
 import { redirect } from "react-router";
+import { Button } from "~/Components/ui/button";
 export function meta({}: Route.MetaArgs) {
   return [
     { title: "Peoples Balita Poster" },
@@ -39,14 +41,21 @@ export default function Home({loaderData} : Route.ComponentProps) {
   
   return (
     <>
-      <div>
-          {/* <h1>Posts</h1> */}
-          {/* Filter */}
-          <br />
-          <br />
-          <div className="p-2 grid place-items-center">
-            <Datatable posts={posts}/>
+      <div className="mt-10">
+          <Filter />
+          <div className="p-2 grid mx-100 grid-cols-5 gap-4">
+            <div></div>
+            <div></div>
+            <div></div>
+            <div className="grid w-full max-w-sm items-center gap-1.5">
+              <Button variant={"print"}>Print Tabloid</Button>
+            </div>
+            <div className="grid w-full max-w-sm items-center gap-1.5">
+            <Button variant={"fb"}>Post All to Facebook</Button>
+            </div>
           </div>
+          
+          <Datatable posts={posts}/>
       </div>
     </>
   );
