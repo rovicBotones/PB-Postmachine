@@ -1,6 +1,6 @@
 
 import type { Route } from "./+types/home";
-import { getAllData, uploadToFacebook } from "utils/posts.service";
+import { getAllData } from "utils/posts.service";
 import React from "react";
 import Datatable from "~/Components/Datetable";
 import { redirect } from "react-router";

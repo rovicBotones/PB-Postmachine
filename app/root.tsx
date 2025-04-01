@@ -40,9 +40,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
     </html>
   );
 }
-export async function action({request, params}: Route.ClientActionArgs){
-  console.log("clientAction triggered", request);
-}
+
 export default function App() {
   return <Outlet />;
 }
