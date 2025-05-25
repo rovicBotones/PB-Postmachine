@@ -1,14 +1,17 @@
 
-import type { Route } from "./+types/home";
+
 import { getAllData } from "utils/posts.service";
-import React from "react";
-import Datatable from "~/Components/Datetable";
-import Filter from "~/Components/Filter";
+import React, { useEffect } from "react";
+import Datatable from "~/components/Datetable";
+import Filter from "~/components/Filter";
 import { redirect } from "react-router";
-import { Button } from "~/Components/ui/button";
+import { Button } from "~/components/ui/button";
+import type { Route } from "./+types/_layout.home";
+import { isAuthenticated } from "utils/auth.service";
+import { toast } from "sonner";
 export function meta({}: Route.MetaArgs) {
   return [
-    { title: "Peoples Balita Poster" },
+    { title: "PB Post Machine" },
   ];
 }
 export type News = {
@@ -22,7 +25,15 @@ export type News = {
 export async function clientLoader({
   params,
 }: Route.ClientLoaderArgs) {
+  
   try {
+    const isLoggedIn = await isAuthenticated();
+    if (!isLoggedIn) {
+      toast('My first toast');
+      return redirect("/");
+    }
+    
+    console.log("clientLoader called with params");
     const dateToday = new Date();
     const datas = await getAllData(dateToday);
     console.log(datas);
@@ -32,11 +43,11 @@ export async function clientLoader({
     return [];
   }
 }
-export async function clientAction({request}: Route.ClientActionArgs) {
+export async function clientAction({ request }: Route.ClientActionArgs) {
   console.log("clientAction triggered", request);
 }
 
-export default function Home({loaderData} : Route.ComponentProps) {
+export default function Home({ loaderData } : Route.ComponentProps) {
   const posts = loaderData;
   
   return (
@@ -48,10 +59,10 @@ export default function Home({loaderData} : Route.ComponentProps) {
             <div></div>
             <div></div>
             <div className="grid w-full max-w-sm items-center gap-1.5">
-              <Button variant={"print"}>Print Tabloid</Button>
+              <Button variant={"destructive"}>Print Tabloid</Button>
             </div>
             <div className="grid w-full max-w-sm items-center gap-1.5">
-            <Button variant={"fb"}>Post All to Facebook</Button>
+            <Button variant={"default"}>Post All to Facebook</Button>
             </div>
           </div>
           

@@ -9,6 +9,12 @@ import {
 
 import type { Route } from "./+types/root";
 import "./app.css";
+import { useEffect, useState } from "react";
+import { createClient } from '@supabase/supabase-js'
+import { Auth } from '@supabase/auth-ui-react'
+import { ThemeMinimal } from '@supabase/auth-ui-shared'
+import { LoginForm } from "./components/login-form";
+import { Toaster, toast } from 'sonner';
 
 export const links: Route.LinksFunction = () => [
   { rel: "preconnect", href: "https://fonts.googleapis.com" },
@@ -40,9 +46,39 @@ export function Layout({ children }: { children: React.ReactNode }) {
     </html>
   );
 }
-
 export default function App() {
-  return <Outlet />;
+  // const [session, setSession] = useState(null)
+  //   useEffect(() => {
+  //     supabase.auth.getSession().then(({ data: { session } }) => {
+  //       setSession(session)
+  //     })
+  //     const {
+  //       data: { subscription },
+  //     } = supabase.auth.onAuthStateChange((_event, session) => {
+  //       setSession(session)
+  //     })
+  //     return () => subscription.unsubscribe()
+  //   }, [])
+  //   if (!session) {
+  //     return (
+  //       <> 
+  //         {/* <Auth supabaseClient={supabase} appearance={{ theme: ThemeMinimal }} /> */}
+  //         <div className="flex min-h-svh flex-col items-center justify-center bg-gray-900 p-6 md:p-10 ">
+  //           <div className="w-full max-w-sm md:max-w-3xl">
+  //             <LoginForm className=""/>
+  //           </div>
+  //         </div>
+  //       </>
+  //     )
+  //   }
+  //   else {
+      return (
+      <> 
+      <Outlet />
+      </>
+    );
+    // }
+  
 }
 
 export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {

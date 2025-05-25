@@ -1,11 +1,10 @@
-import { type News } from "~/routes/home";
+import { type News } from "~/routes/_layout.home";
 import { createColumnHelper, flexRender, getCoreRowModel, getSortedRowModel, useReactTable} from "@tanstack/react-table";
 import { LiaFacebookSquare  } from "react-icons/lia";
 import dayjs from "dayjs";
 import { Link } from "react-router";
 import { useNavigation, useFetcher } from "react-router";
 import type { ClientRequestArgs } from "http";
-import type { Route } from "../routes/+types/home";
 import { uploadToFacebookById } from "utils/posts.service";
 import { useState } from "react";
 import { FaSpinner } from "react-icons/fa";
