@@ -1,7 +1,7 @@
 import { AuthError, createClient, type Session, type User, type WeakPassword } from "@supabase/supabase-js";
 import { useState } from "react";
 
-const supabase = createClient(import.meta.env.VITE_WP_SUPABASE_PROJ, import.meta.env.VITE_WP_ANON_KEY);
+export const supabase = createClient(import.meta.env.VITE_WP_SUPABASE_PROJ, import.meta.env.VITE_WP_ANON_KEY);
 type Login =  {
     data: data; // Replace `any` with the actual type if known
     error: AuthError | null;

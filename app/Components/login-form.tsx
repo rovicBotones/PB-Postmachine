@@ -14,6 +14,7 @@ export function LoginForm({
 }: React.ComponentProps<"div">) {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
+  const [errMessage, setErrMessage] = useState(false);
   const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsLoading(true);
@@ -21,6 +22,7 @@ export function LoginForm({
     console.log(error);
     if (error) {
       setIsLoading(false);
+      setErrMessage(true);
       navigate("/login");
     } 
     
@@ -50,14 +52,14 @@ export function LoginForm({
               <div className="grid gap-3">
                 <div className="flex items-center">
                   <Label htmlFor="password">Password</Label>
-                  <a
-                    href="#"
-                    className="ml-auto text-sm underline-offset-2 hover:underline"
-                  >
-                    Forgot your password?
-                  </a>
+                  
                 </div>
                 <Input id="password" type="password" required />
+              </div>
+              <div className="flex flex-wrap items-center gap-2 md:flex-row" hidden={!errMessage}>
+                <span className="text-red-500 text-sm">
+                  Invalid email or password
+                </span>
               </div>
               <Button type="submit" className="w-full">
                 {isLoading ? 'Loging in...' : 'Login'}
@@ -96,12 +98,7 @@ export function LoginForm({
                   <span className="sr-only">Login with Meta</span>
                 </Button>
               </div> */}
-              <div className="text-center text-sm">
-                Don&apos;t have an account?{" "}
-                <a href="#" className="underline underline-offset-4">
-                  Sign up
-                </a>
-              </div>
+             
             </div>
           </form>
           <div className="bg-muted relative hidden md:block">
