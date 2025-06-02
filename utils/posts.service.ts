@@ -2,10 +2,15 @@
 import dayjs from "dayjs";
 import { request, gql } from 'graphql-request';
 
+type FilterDto = {
+    Date: Date | undefined;
+    Category: string;
+    Title: string;
+}
 
 
-export const getAllData = async (dateToday: Date) => {
-    const dateTsss = dayjs(dateToday).format('YYYY-MM-DD');
+export const getAllData = async (filter: FilterDto) => {
+    const dateTsss = dayjs(filter.Date).format('YYYY-MM-DD');
     console.log(dayjs(dateTsss).get('month'), dateTsss);
     const date = dayjs(dateTsss).get('date');
     const month = dayjs(dateTsss).get('month') + 1;
@@ -49,23 +54,39 @@ export const getAllData = async (dateToday: Date) => {
     id: string;
     status: string;
   }
-  export const uploadToFacebookById = async (id: string) => {
-    console.log("it hits");
+  export const postAll = async (filter: FilterDto) => {
+    const dateToday = new Date();
+    const datas = await getAllData(filter);
+    console.log(datas);
+    const results: IUploadToFacebook[] = [];
+    for (const data of datas) {
+      try {
+        await uploadToFacebookById(data.Id);
+        results.push({ id: data.Id, status: 'success' });
+      } catch (error) {
+        console.error(`Failed to upload post with ID ${data.Id}:`, error);
+        results.push({ id: data.Id, status: 'failed' });
+      }
+    }
+    return results;
+  }
+  export const uploadToFacebookById = async (id: string): Promise<string>  => {
     const {linkOfPost, titleOfPost} = await getDataById(id);
     let link = linkOfPost;
     let message = titleOfPost;
-    console.log(link, message);
-    const privacy = JSON.stringify({ value: "EVERYONE" });
-    const encodedPrivacy = encodeURIComponent(privacy);
     let token = import.meta.env.VITE_ACCESS_TOKEN;
-    let url = `https://graph.facebook.com/v22.0/123281457540260/feed?access_token=${token}&message=${message}&link=${link}&published=true&privacy=${encodedPrivacy}`;
+    let url = `https://graph.facebook.com/v22.0/123281457540260/feed?access_token=${token}&message=${message}&link=${link}&published=true&scope=publish_to_groups`;
     console.log(url);
     
     fetch(url, {
       method: 'post'
+     }).then((response) => {
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
      });
-    // console.log("uploadToFacebook", id);
-    // return { id, status: "success" };
+     return 'ok';
   };
   const getDataById = async (id: string) => {
     console.log("where: ", id);

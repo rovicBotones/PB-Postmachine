@@ -36,7 +36,7 @@ import { set } from "date-fns"
 
 const items = [
   {
-    title: "Dashboard",
+    title: "App Home",
     url: "/home",
     icon: House,
   },
@@ -73,7 +73,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                   <SidebarMenuButton asChild>
                     <a href={item.url}>
                       <item.icon />
-                      <span className="font-bold">{item.title}</span>
+                      <span className="">{item.title}</span>
                     </a>
                   </SidebarMenuButton>
                 </SidebarMenuItem>

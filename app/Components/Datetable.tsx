@@ -10,6 +10,7 @@ import { useState } from "react";
 import { FaSpinner } from "react-icons/fa";
 import { SiGooglesearchconsole } from "react-icons/si";
 import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from "./ui/table";
+import { toast } from "sonner";
 
 const columnHelper = createColumnHelper<News>()
 
@@ -28,7 +29,15 @@ const columns = [
   }),
   columnHelper.accessor(row => row.Title, {
     id: 'title',
-    cell: info => <i className="pr-5 pl-1">{info.getValue()}</i>,
+    cell: info => {
+    const value = info.getValue() as string;
+    const words = value.split(" ");
+    const display =
+      words.length > 10
+        ? words.slice(0, 10).join(" ") + "..."
+        : value;
+    return <i className="pr-5 pl-1">{display}</i>;
+    },
     header: () => <span>Title</span>,
     footer: info => info.column.id,
   }),
@@ -36,22 +45,28 @@ const columns = [
     accessorKey: "Action",
     header: () => <span className="grid place-items-center">Action</span>,
     cell: (cell: any) => {
-      // const [loading, setLoading] = useState(false);
-      // console.log(cell);
+      const [loading, setLoading] = useState(false);
       const uploadRow = async (value: string) => {
-        console.log("val: ", value);
-        await uploadToFacebookById(value);
-        
+        setLoading(true);
+        try {
+         const res =  await uploadToFacebookById(value);
+         if(res != 'ok') {
+            toast.error("Error uploading post to Facebook. Please contact admin.");
+         }
+            toast.success("Post uploaded to Facebook successfully!");
+        } finally {
+          setLoading(false);
+        }
       }
       return (
         <div className="inline-flex gap-x-2 px-5 py-2">
-          <button type="button" className="rounded-md border border-transparent 
-              py-2 px-5 text-center text-sm bg-[#1877F2] hover:bg-sky-700" 
-              // disabled={loading}
-              onClick={() => {uploadRow(cell.row.original.Id);
-              }
-              }>
-                {<LiaFacebookSquare />}
+          <button
+            type="button"
+            className="rounded-md border border-transparent py-2 px-5 text-center text-sm bg-[#1877F2] hover:bg-sky-700 flex items-center justify-center"
+            disabled={loading}
+            onClick={() => uploadRow(cell.row.original.Id)}
+          >
+            {loading ? <FaSpinner className="animate-spin" /> : <LiaFacebookSquare />}
           </button>
           
         </div>
@@ -65,6 +80,10 @@ const Datatable = ({ posts }: News) => {
     const table = useReactTable({
         data: posts,
         columns,
+        defaultColumn: {
+          minSize: 60,
+          maxSize: 800,
+        },
         getCoreRowModel: getCoreRowModel(),
         getSortedRowModel: getSortedRowModel(),
         initialState: {
@@ -74,8 +93,8 @@ const Datatable = ({ posts }: News) => {
 
     return (
       <>
-      <div className="p-2 grid mx-100">
-      <Table className="table-auto border-collapse border border-spacing-2 border-gray-400">
+      <div className="p-2">
+      <Table className="">
             <TableHeader>
                 {table.getHeaderGroups().map(headerGroup => (
                 <TableRow key={headerGroup.id}>

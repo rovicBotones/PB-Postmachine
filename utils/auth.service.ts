@@ -34,3 +34,11 @@ export const isAuthenticated = async (): Promise<boolean> => {
     }
     return session !== null;
 }
+export const getAcessToken = async (): Promise<string | null> => {
+    let { data: Access, error } = await supabase
+      .from('Access')
+      .select('access_token')
+      .order('id', { ascending: false }) // Or use 'created_at' if that's your timestamp field
+      .limit(1);
+      return error ? null : Access?.[0]?.access_token || null;
+}
