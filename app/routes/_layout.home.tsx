@@ -99,7 +99,7 @@ export default function Home({ loaderData } : Route.ComponentProps) {
             </div>
             <div className="grid w-full max-w-sm items-center gap-1.5">
               <Button variant="outline" onClick={() => {
-                window.location.href = "/add-article";
+                // window.location.href = "/add-article";
               }}>Add Article</Button>
             </div>
             <div className="grid w-full max-w-sm items-center gap-1.5">

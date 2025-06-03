@@ -139,10 +139,10 @@ async function fetchAccessToken(){
   }
 }
 // fetchAccessToken();
-cron.schedule('0 0 */59 * *', async () => {
-  console.log("Running scheduled job: go()");
-  // await go();
-});
+// cron.schedule('0 0 */59 * *', async () => {
+//   console.log("Running scheduled job: go()");
+//   // await go();
+// });
 const port = process.env.PORT || 3000;
 app.listen(port, () =>
   console.log(`Express server listening at http://localhost:${port}`)
