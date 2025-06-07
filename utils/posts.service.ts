@@ -17,21 +17,24 @@ export const getAllData = async (filter: FilterDto) => {
     const year = dayjs(dateTsss).get('year');
     const data = await request(import.meta.env.VITE_API_URL, gql`
       query NewQuery {
-          posts(first: 100, where: {dateQuery: {year: ${year}, month: ${month}, day: ${date} }}) {
-            edges {
-              node {
-                id
-                title
-                categories {
-                  nodes {
-                    name
-                  }
+        posts(
+          first: 100
+          where: {dateQuery: {year: ${year}, month: ${month}, day: ${date}}, categoryName: ${filter.Category ? `"${filter.Category}"` : "null"}}
+        ) {
+          edges {
+            node {
+              id
+              categories {
+                nodes {
+                  name
                 }
-                date
               }
+              title
+              date
             }
           }
         }
+      }
     `);
     const datas = [];
       for(let i = 0; i < data.posts.edges.length; i++) {
