@@ -17,7 +17,8 @@ import {
 import {
   House,
   LogOut,
-  Printer
+  Printer,
+  UserCircle
 } from "lucide-react"
 import { Button } from "~/components/ui/button"
 import { signoutService } from "utils/signOut.service"
@@ -44,6 +45,11 @@ const items = [
     title: "Print",
     url: "#",
     icon: Printer,
+  },
+  {
+    title: "Users",
+    url: "/users",
+    icon: UserCircle,
   }
 ]
 
