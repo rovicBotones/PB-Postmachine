@@ -113,7 +113,6 @@ async function render(){
     console.log(headline);
 }
 // render();
-// export const supabase = createClient(process.env.VITE_WP_SUPABASE_PROJ, process.env.VITE_WP_ANON_KEY);
 async function fetchAccessToken(){
   try {
     // const access = await getAccessToken();
