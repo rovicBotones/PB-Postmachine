@@ -32,9 +32,10 @@ export const getRolesFromAPI = async () => {
         .eq("role_id", role.id);
 
       return {
-        id: role.id,
+        id: role_permissions?.map((x) => x.id) || [],
         name: role.role,
         claims: role_permissions?.map((x) => x.permission) || [],
+        role_id: role.id
       };
     })
   );

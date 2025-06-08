@@ -9,11 +9,11 @@ export async function clientLoader({params}: Route.ClientLoaderArgs) {
   const permission = await getRolesFromAPI();
   const users = await getUsersFromAPI();
   const roleDetails = await getRoles();
-  console.log("list: ", permission);
   return { roles: permission, users: users, roleDetails: roleDetails };
 }
 export default function Page(){
   const { roles, users, roleDetails } = useLoaderData<typeof clientLoader>();
+  console.log('roles from useres: ', roles);
   return (
     <div className="m-2">
       

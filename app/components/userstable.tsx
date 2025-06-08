@@ -18,7 +18,7 @@ import {
   TableRow,
 } from "~/components/ui/table";
 import { Badge } from "~/components/ui/badge";
-import { Heading1, Save, UserCheck } from "lucide-react";
+import { Fingerprint, Heading1, Save, UserCheck } from "lucide-react";
 import type { Route } from "../routes/+types/_layout.users";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "./ui/select";
 
@@ -40,7 +40,6 @@ type UserRoleTableProps = {
   roleDetails: RoleDetails[];
 };
 export default function Component({ users, roleDetails }: UserRoleTableProps) {
-    console.log("userList: ", users);
   const [hasChanges, setHasChanges] = useState(false);
   const saveChanges = () => {
     // Here you would typically save to your backend
@@ -52,8 +51,8 @@ export default function Component({ users, roleDetails }: UserRoleTableProps) {
       <CardHeader className="flex flex-row items-center justify-between">
         <div>
           <CardTitle className="flex items-center gap-2">
-            <UserCheck className="h-5 w-5" />
-            User Role Management
+            <Fingerprint className="h-5 w-5" />
+            User Management
           </CardTitle>
           {/* <CardDescription>Manage user permissions and access levels</CardDescription>a  */}
         </div>

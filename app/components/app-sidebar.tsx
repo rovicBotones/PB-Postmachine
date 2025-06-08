@@ -34,25 +34,30 @@ import {
   CredenzaTrigger,
 } from "~/components/ui/credenza"
 import { set } from "date-fns"
+import { Link } from "react-router"
 
 const items = [
   {
     title: "App Home",
     url: "/home",
     icon: House,
+    permission: "view.user"
   },
   {
     title: "Print",
     url: "#",
     icon: Printer,
+    permission: "view.user"
   },
   {
-    title: "Users",
+    title: "User Roles",
     url: "/users",
     icon: UserCircle,
+    permission: "print"
+
   }
 ]
-
+const userPermissions = ["view.user"];
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const [open, setOpen] = React.useState(false);
   const handleLogout = async () => {
@@ -74,13 +79,15 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           <SidebarGroupLabel>PB POST MACHINE</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {items.map((item) => (
+              {items
+              .filter(item => userPermissions.includes(item.permission))
+              .map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild>
-                    <a href={item.url}>
+                    <Link to={item.url}>
                       <item.icon />
                       <span className="">{item.title}</span>
-                    </a>
+                    </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}

@@ -20,6 +20,13 @@ import {
 import { Badge } from "~/components/ui/badge";
 import { Heading1, Save, UserCheck } from "lucide-react";
 import type { Route } from "../routes/+types/_layout.users";
+import {
+  upsertPermission,
+  insertPermission,
+  deletePermission,
+  fetchExistingPermissions,
+} from "utils/role.service";
+import { toast } from "sonner";
 
 // type Role = "View" | "Add" | "Edit" | "Delete";
 
@@ -27,30 +34,13 @@ type Roles = {
   id: string;
   name: string;
   claims: any[];
+  role_id: any[];
 };
 
 type UserRoleTableProps = {
   roles: Roles[];
 };
 export default function Component({ roles }: UserRoleTableProps) {
-  const claims = [
-    {
-      id: "1",
-      name: "View",
-    },
-    {
-      id: "2",
-      name: "Add",
-    },
-    {
-      id: "3",
-      name: "Edit",
-    },
-    {
-      id: "4",
-      name: "Delete",
-    },
-  ];
   const [userRoles, setUserRoles] = useState<Roles[]>([]);
 
   useEffect(() => {
@@ -58,14 +48,85 @@ export default function Component({ roles }: UserRoleTableProps) {
       setUserRoles(roles);
     }
   }, [roles]);
-
   const [hasChanges, setHasChanges] = useState(false);
-
-  const saveChanges = () => {
-    // Here you would typically save to your backend
-    console.log("Saving user roles:", roles);
+  console.log("roles: ", userRoles);
+  const saveChanges = async () => {
+    const userRoleCount = userRoles.flatMap((x) => x).length;
+    const idCount = userRoles.flatMap((x) => x.claims).length;
+    const permsInsert = [];
+    const permsUpdate = [];
+    const permsDelete = [];
+    for (let i = 0; i < userRoleCount; i++) {
+      let userRole = userRoles[i];
+      for (let j = 0; j < idCount; j++) {
+        let name = userRole.name;
+        let id = userRole.id[j];
+        let permission = userRole.claims[j];
+        let role_id = userRole.role_id;
+        if (permission) {
+          if (id) {
+            permsUpdate.push({
+              role: name,
+              id: id,
+              permission: permission,
+              role_id: role_id,
+            });
+          } else {
+            permsInsert.push({
+              role: name,
+              permission: permission,
+              role_id: role_id,
+            });
+          }
+        }
+        permsDelete.push({
+          id: id,
+          permission: permission,
+        });
+      }
+    }
+    // console.log("perms: ", perms);
+    // let permission = await upsertPermission({ perms: perms });
+    // if (!permission) {
+    //   toast.error("Error on saving permission");
+    // }
+    if (permsUpdate.length > 0) {
+      const updatePermission = await upsertPermission({ perms: permsUpdate });
+      if (!updatePermission) {
+        toast.error("Error on saving permission");
+        return;
+      }
+    }
+    if (permsInsert.length > 0) {
+      const insertPermissionResult = await insertPermission({
+        perms: permsInsert,
+      });
+      if (!insertPermissionResult) {
+        toast.error("Error on inserting permission");
+        return;
+      }
+    }
+    if (permsDelete.length > 0) {
+      const res = await deletePermission({ perms: permsDelete });
+    }
+    console.log("permsDelete: ", permsDelete);
+    toast.success("Permission successfully saved");
     setHasChanges(false);
   };
+  type PermissionDto = {
+    role: string;
+    id: string;
+    permission: any;
+  };
+  type InsertPermissionDto = {
+    role: string;
+    permission: any;
+  };
+  type DeletePermissionDto = {
+    id: string;
+    permission: any;
+  };
+  
   const permissionTypes = [
     { label: "View", value: "users.view" },
     { label: "Add", value: "users.add" },
@@ -78,7 +139,7 @@ export default function Component({ roles }: UserRoleTableProps) {
         <div>
           <CardTitle className="flex items-center gap-2">
             <UserCheck className="h-5 w-5" />
-            User Role Management
+            Role Management
           </CardTitle>
           {/* <CardDescription>Manage user permissions and access levels</CardDescription>a  */}
         </div>
@@ -102,13 +163,32 @@ export default function Component({ roles }: UserRoleTableProps) {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {userRoles.map((role) => (
+              {userRoles.map((role, roleIdx) => (
                 <TableRow key={role.id}>
                   <TableCell>{role.name}</TableCell>
                   {permissionTypes.map((perm) => (
                     <TableCell key={perm.value}>
-                      <Checkbox checked={role.claims.includes(perm.value)} />
-                      
+                      <Checkbox
+                        checked={role.claims.includes(perm.value)}
+                        // onCheckedChange={() => toggleRole(perm.label, perm.value)}
+                        onCheckedChange={(checked) => {
+                          setUserRoles((prev) =>
+                            prev.map((r, idx) =>
+                              idx === roleIdx
+                                ? {
+                                    ...r,
+                                    claims: checked
+                                      ? [...r.claims, perm.value]
+                                      : r.claims.filter(
+                                          (c) => c !== perm.value
+                                        ),
+                                  }
+                                : r
+                            )
+                          );
+                          setHasChanges(true);
+                        }}
+                      />
                     </TableCell>
                   ))}
                 </TableRow>
