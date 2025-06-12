@@ -121,7 +121,7 @@ export default function Home({ loaderData } : Route.ComponentProps) {
                     </CredenzaDescription> */}
                   </CredenzaHeader>
                   <CredenzaBody>
-                    Are you sure you want to post all to facebook? 
+                    Are you sure you want to post all <b className="text-blue-600">{posts.datas.length}</b> articles to facebook? 
                   </CredenzaBody>
                   <CredenzaFooter>
                     <Button

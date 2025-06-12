@@ -22,7 +22,6 @@ import { Heading1, Save, UserCheck } from "lucide-react";
 import type { Route } from "../routes/+types/_layout.users";
 import {
   upsertPermission,
-  insertPermission,
   deletePermission,
   fetchExistingPermissions,
 } from "utils/role.service";
@@ -31,16 +30,31 @@ import { toast } from "sonner";
 // type Role = "View" | "Add" | "Edit" | "Delete";
 
 type Roles = {
-  id: string;
+  id: string[];
   name: string;
   claims: any[];
-  role_id: any[];
+  role_id: string;
 };
 
 type UserRoleTableProps = {
   roles: Roles[];
+  allRoles: Roles[];
 };
-export default function Component({ roles }: UserRoleTableProps) {
+type Permis = {
+  id: number;
+  claim: string;
+  name: string;
+  role_id: string;
+};
+type InsertPermis = {
+  claim: string;
+  name: string;
+  role_id: string;
+};
+type Delete = {
+  id: number;
+};
+export default function Component({ roles, allRoles }: UserRoleTableProps) {
   const [userRoles, setUserRoles] = useState<Roles[]>([]);
 
   useEffect(() => {
@@ -49,67 +63,76 @@ export default function Component({ roles }: UserRoleTableProps) {
     }
   }, [roles]);
   const [hasChanges, setHasChanges] = useState(false);
-  console.log("roles: ", userRoles);
   const saveChanges = async () => {
+    console.log("roles: ", userRoles, roles);
     const userRoleCount = userRoles.flatMap((x) => x).length;
     const idCount = userRoles.flatMap((x) => x.claims).length;
-    const permsInsert = [];
-    const permsUpdate = [];
-    const permsDelete = [];
-    for (let i = 0; i < userRoleCount; i++) {
-      let userRole = userRoles[i];
-      for (let j = 0; j < idCount; j++) {
-        let name = userRole.name;
-        let id = userRole.id[j];
-        let permission = userRole.claims[j];
-        let role_id = userRole.role_id;
-        if (permission) {
-          if (id) {
-            permsUpdate.push({
-              role: name,
-              id: id,
-              permission: permission,
-              role_id: role_id,
-            });
-          } else {
-            permsInsert.push({
-              role: name,
-              permission: permission,
-              role_id: role_id,
-            });
-          }
-        }
-        permsDelete.push({
+    const permsUpdate: Permis[] = [];
+    const perms: any[] = [];
+    const permsInsert: Permis[] = [];
+
+    roles.forEach((x) => {
+      for (let i = 0; i < x.id.length; i++) {
+        const claim = x.claims[i];
+        const roleId = x.role_id;
+        const id = x.id[i];
+        perms.push({
           id: id,
-          permission: permission,
+          claim: claim,
+          roleId: roleId,
         });
       }
-    }
-    // console.log("perms: ", perms);
-    // let permission = await upsertPermission({ perms: perms });
-    // if (!permission) {
-    //   toast.error("Error on saving permission");
-    // }
-    if (permsUpdate.length > 0) {
-      const updatePermission = await upsertPermission({ perms: permsUpdate });
-      if (!updatePermission) {
-        toast.error("Error on saving permission");
-        return;
+    });
+    userRoles.forEach(async (x) => {
+      for (let i = 0; i < x.claims.length; i++) {
+        const claim = x.claims[i];
+        const roleId = x.role_id;
+        const id = x.id[i];
+        if (claim) {
+          permsInsert.push({
+            id: Number(id),
+            claim: claim,
+            name: x.name,
+            role_id: String(roleId),
+          });
+          permsUpdate.push({
+            id: Number(id),
+            claim: claim,
+            name: x.name,
+            role_id: String(roleId),
+          });
+        }
       }
-    }
-    if (permsInsert.length > 0) {
-      const insertPermissionResult = await insertPermission({
-        perms: permsInsert,
-      });
-      if (!insertPermissionResult) {
-        toast.error("Error on inserting permission");
-        return;
+    });
+    console.log("claim: ", userRoles, roles, permsUpdate);
+    let permisnew: Permis[] = [];
+    let toDelete: Delete[] = [];
+    let toInsert: InsertPermis[] = [];
+    permsInsert.forEach((e) => {
+      if (isNaN(Number(e.id))) {
+        toInsert.push({
+          claim: e.claim,
+          name: e.name,
+          role_id: e.role_id
+        });
       }
+    });
+    perms.forEach((e) => {
+      const existsInUpdate = permsUpdate.some((element) => element.id === e.id);
+      if (!existsInUpdate) {
+        toDelete.push({
+          id: e.id,
+        });
+      }
+    });
+    if (toDelete.length > 0 && toDelete) {
+      await deletePermission(toDelete);
     }
-    if (permsDelete.length > 0) {
-      const res = await deletePermission({ perms: permsDelete });
+    if (permsUpdate.length > 0 && permsUpdate) {
+      await upsertPermission(toInsert);
     }
-    console.log("permsDelete: ", permsDelete);
+    console.log("toDelete: ", toDelete);
+
     toast.success("Permission successfully saved");
     setHasChanges(false);
   };
@@ -126,7 +149,7 @@ export default function Component({ roles }: UserRoleTableProps) {
     id: string;
     permission: any;
   };
-  
+
   const permissionTypes = [
     { label: "View", value: "users.view" },
     { label: "Add", value: "users.add" },
@@ -164,7 +187,7 @@ export default function Component({ roles }: UserRoleTableProps) {
             </TableHeader>
             <TableBody>
               {userRoles.map((role, roleIdx) => (
-                <TableRow key={role.id}>
+                <TableRow key={role.name}>
                   <TableCell>{role.name}</TableCell>
                   {permissionTypes.map((perm) => (
                     <TableCell key={perm.value}>

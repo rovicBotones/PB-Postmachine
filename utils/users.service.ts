@@ -17,8 +17,6 @@ export const supabase = createClient(
   }
 );
 export const getRolesFromAPI = async () => {
-  // const { data: { users }, error } = await supabase.auth.admin.listUsers()
-
   let { data: roles, error } = await supabase.from("roles").select(`*`);
   if (error || !roles) {
     console.error("Error fetching user:", error);
@@ -41,6 +39,7 @@ export const getRolesFromAPI = async () => {
   );
   return permissions;
 };
+
 export const getUsersFromAPI = async () => {
   const {
     data: { users },

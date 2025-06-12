@@ -57,7 +57,7 @@ const items = [
 
   }
 ]
-const userPermissions = ["view.user"];
+const userPermissions = ["view.user", "print"];
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const [open, setOpen] = React.useState(false);
   const handleLogout = async () => {
