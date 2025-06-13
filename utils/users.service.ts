@@ -73,3 +73,16 @@ export const getRoles = async () => {
     }
     return roles;
 }
+export const getCurrentUserId = async () => {
+  const {
+    data: { user },
+    error,
+  } = await supabase.auth.getUser();
+
+  if (error) {
+    console.error("Failed to get user:", error);
+    return null;
+  }
+
+  return user?.id || null;
+};

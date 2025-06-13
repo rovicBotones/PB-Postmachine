@@ -43,16 +43,4 @@ export const getAcessToken = async (): Promise<string | null> => {
       return error ? null : Access?.[0]?.access_token || null;
 }
 
-export const getCurrentUserId = async () => {
-  const {
-    data: { user },
-    error,
-  } = await supabase.auth.getUser();
-
-  if (error) {
-    console.error("Failed to get user:", error);
-    return null;
-  }
-
-  return user?.id || null;
-};
+// 
