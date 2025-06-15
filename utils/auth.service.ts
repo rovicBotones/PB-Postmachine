@@ -34,6 +34,25 @@ export const isAuthenticated = async (): Promise<boolean> => {
     }
     return session !== null;
 }
+type sessionDTO = {
+   session: boolean;
+   sessionDetails: string | undefined
+}
+export const session = async (): Promise<sessionDTO> => {
+    const { data: { session }, error } = await supabase.auth.getSession();
+    if (error) {
+        console.error("Error fetching session:", error);
+        return {
+            session: false,
+            sessionDetails: ''
+
+        };
+    }
+    return {
+        session: session !== null,
+        sessionDetails: session?.user.id
+    };
+}
 export const getAcessToken = async (): Promise<string | null> => {
     let { data: Access, error } = await supabase
       .from('Access')

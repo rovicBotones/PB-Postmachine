@@ -5,7 +5,8 @@ import Filter from "~/components/Filter";
 import { redirect } from "react-router";
 import { Button } from "~/components/ui/button";
 import type { Route } from "./+types/_layout.home";
-import { isAuthenticated } from "utils/auth.service";
+import { isAuthenticated, session } from "utils/auth.service";
+import { getUserRole } from "utils/users.service";
 import { toast } from "sonner";
 import {
   Credenza,
@@ -18,7 +19,9 @@ import {
   CredenzaTitle,
   CredenzaTrigger,
 } from "~/components/ui/credenza";
+import { AlertTriangle } from "lucide-react";
 import { useSearchParams } from "react-router";
+import { Alert, AlertDescription, AlertTitle } from "~/components/ui/alert";
 export function meta({}: Route.MetaArgs) {
   return [{ title: "PB Post Machine" }];
 }
@@ -36,6 +39,7 @@ export async function clientLoader({
 }: Route.ClientLoaderArgs) {
   try {
     const isLoggedIn = await isAuthenticated();
+    const sessDetails = await session();
     if (!isLoggedIn) {
       toast("My first toast");
       return redirect("/");
@@ -44,16 +48,22 @@ export async function clientLoader({
     const date = url.searchParams.get("date");
     const dateToday = new Date();
     const dateFilter = date ? new Date(date) : dateToday;
+    const role = await getUserRole(sessDetails.sessionDetails);
     const filter = {
       Date: dateFilter,
       Category: url.searchParams.get("category") || "",
       Title: url.searchParams.get("title") || "",
     };
     const datas = await getAllData(filter);
-    console.log(datas);
+    console.log("isLoggedIn: ", role);
+    datas.map((x) => {
+      x.role = role;
+    });
+    console.log('data: ', datas);
     return {
       datas: datas,
       filter: filter,
+      role: role,
     };
   } catch (error) {
     console.error(error);
@@ -69,6 +79,7 @@ export async function clientAction({ request }: Route.ClientActionArgs) {
 
 export default function Home({ loaderData }: Route.ComponentProps) {
   const posts = loaderData;
+
   const [loading, setLoading] = React.useState(false);
   const [open, setOpen] = React.useState(false);
   const handlePostAll = async () => {
@@ -105,7 +116,10 @@ export default function Home({ loaderData }: Route.ComponentProps) {
           <div className="grid w-full max-w-sm items-center gap-1.5">
             <Credenza open={open} onOpenChange={setOpen}>
               <CredenzaTrigger asChild>
-                <Button variant={"default"} disabled={loading}>
+                <Button
+                  variant={"default"}
+                  disabled={posts.datas.length <= 0 || loading}
+                >
                   {loading ? "Posting..." : "Post All to Facebook"}
                 </Button>
               </CredenzaTrigger>
@@ -121,20 +135,33 @@ export default function Home({ loaderData }: Route.ComponentProps) {
                   <b className="text-blue-600">
                     {posts.datas.length > 0 ? posts.datas.length : ""}
                   </b>{" "}
-                  articles to facebook?
+                  {posts.datas.length > 1 ? "articles" : "article"} to facebook?
                 </CredenzaBody>
+
                 <CredenzaFooter>
-                  <Button
-                    variant="go"
-                    id="logout"
-                    onClick={handlePostAll}
-                    disabled={loading}
-                  >
-                    Yes
-                  </Button>
-                  <CredenzaClose asChild>
-                    <Button>No</Button>
-                  </CredenzaClose>
+                  {posts.role === "admin" ? (
+                    <>
+                      <Button
+                        variant="go"
+                        id="logout"
+                        onClick={handlePostAll}
+                        disabled={loading}
+                      >
+                        Yes
+                      </Button>
+                      <CredenzaClose asChild>
+                        <Button>No</Button>
+                      </CredenzaClose>
+                    </>
+                  ) : (
+                    <Alert variant="warning">
+                      <AlertTriangle className="h-4 w-4" />
+                      <AlertTitle>Error</AlertTitle>
+                      <AlertDescription>
+                        You dont have permission
+                      </AlertDescription>
+                    </Alert>
+                  )}
                 </CredenzaFooter>
               </CredenzaContent>
             </Credenza>

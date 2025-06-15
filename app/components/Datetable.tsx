@@ -64,6 +64,7 @@ const columns = [
             type="button"
             className="rounded-md border border-transparent py-2 px-5 text-center text-sm bg-[#1877F2] hover:bg-sky-700 flex items-center justify-center"
             disabled={loading}
+            hidden={cell.row.original.role !== "admin"}
             onClick={() => uploadRow(cell.row.original.Id)}
           >
             {loading ? <FaSpinner className="animate-spin" /> : <LiaFacebookSquare />}
@@ -76,7 +77,11 @@ const columns = [
     enableColumnFilter: false,
   },
 ]
-const Datatable = ({ posts }: News) => {
+type DatatableDTO = {
+  posts: News;
+  role: string;
+}
+const Datatable = ({ posts }: DatatableDTO) => {
     const table = useReactTable({
         data: posts,
         columns,
