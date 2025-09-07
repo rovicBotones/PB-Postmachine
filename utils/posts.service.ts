@@ -19,7 +19,7 @@ export const getAllData = async (filter: FilterDto) => {
       query NewQuery {
         posts(
           first: 100
-          where: {dateQuery: {year: ${year}, month: ${month}, day: ${date}}, categoryName: ${filter.Category ? `"${filter.Category}"` : "null"}}
+          where: {dateQuery: {year: ${year}, month: ${month}, day: ${date}}, categoryName: ${filter.Category ? `"${filter.Category}"` : "null"}, categoryNotIn: "6"}
         ) {
           edges {
             node {
@@ -31,11 +31,22 @@ export const getAllData = async (filter: FilterDto) => {
               }
               title
               date
+              content(format: RENDERED)
             }
           }
         }
       }
     `);
+    // console.log("fetched data: ", data);
+    function decodeHtmlEntities(str) {
+      const txt = document.createElement("textarea");
+      txt.innerHTML = str;
+      return txt.value;
+    }
+
+    function stripHtmlTags(str) {
+      return str.replace(/<[^>]*>?/gm, "").replace(/\n/g, "");
+    }
     const datas = [];
       for(let i = 0; i < data.posts.edges.length; i++) {
         const id = data.posts.edges[i].node.id;
@@ -43,12 +54,16 @@ export const getAllData = async (filter: FilterDto) => {
         const category = data.posts.edges[i].node.categories.nodes[0].name;
         const title = data.posts.edges[i].node.title;
         const author = "Peoples Balita";
+        const content = data.posts.edges[i].node.content;
+        const decoded = decodeHtmlEntities(content);  // PBBM’s speech <p>today</p>
+        const plain = stripHtmlTags(decoded); 
         datas.push({
           Id: id,
           Date: date,
           Category: category,
           Title: title,
-          Author: author
+          Author: author,
+          Content: plain
         });
       }
     return datas;
