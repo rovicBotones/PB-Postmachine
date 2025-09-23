@@ -2,7 +2,7 @@ import { getAllData, postAll } from "utils/posts.service";
 import React, { useEffect } from "react";
 import Datatable from "~/components/Datetable";
 import Filter from "~/components/Filter";
-import { redirect } from "react-router";
+import { Link, redirect } from "react-router";
 import { Button } from "~/components/ui/button";
 import type { Route } from "./+types/_layout.home";
 import { isAuthenticated, session } from "utils/auth.service";
@@ -191,12 +191,10 @@ export default function Home({ loaderData }: Route.ComponentProps) {
           <div className="grid w-full max-w-sm items-center gap-1.5">
             <Button
               variant="outline"
-              onClick={() => {
-                // window.location.href = "/add-article";
-              }}
             >
-              Add Article
+              <Link to="/add-article">Add Article</Link>
             </Button>
+            
           </div>
           <div className="grid w-full max-w-sm items-center gap-1.5">
             <Credenza open={open} onOpenChange={setOpen}>
