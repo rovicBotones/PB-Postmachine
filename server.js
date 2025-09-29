@@ -43,6 +43,58 @@ if (viteDevServer) {
 app.use(express.static("build/client", { maxAge: "1h" }));
 app.use(morgan("tiny"));
 
+// CORS proxy endpoint for fetching WordPress images with authentication
+app.get('/api/proxy-image', async (req, res) => {
+  try {
+    const imageUrl = req.query.url;
+    const needsAuth = req.query.auth === 'true';
+
+    if (!imageUrl) {
+      return res.status(400).json({ error: 'URL parameter is required' });
+    }
+
+    console.log('Proxying image request for:', imageUrl);
+    console.log('Needs authentication:', needsAuth);
+
+    // Prepare headers for WordPress authentication if needed
+    const fetchHeaders = {};
+    if (needsAuth) {
+      const wpUsername = process.env.VITE_WP_APP_USERNAME;
+      const wpPassword = process.env.VITE_WP_APP_PASSWORD;
+
+      if (wpUsername && wpPassword) {
+        const authString = Buffer.from(`${wpUsername}:${wpPassword}`).toString('base64');
+        fetchHeaders['Authorization'] = `Basic ${authString}`;
+        console.log('Added WordPress authentication headers');
+      }
+    }
+
+    const response = await fetch(imageUrl, {
+      headers: fetchHeaders
+    });
+
+    if (!response.ok) {
+      console.error(`Failed to fetch image: ${response.status} - ${response.statusText}`);
+      throw new Error(`Failed to fetch image: ${response.status}`);
+    }
+
+    console.log('Image fetched successfully, content-type:', response.headers.get('content-type'));
+
+    // Set appropriate CORS headers
+    res.set('Content-Type', response.headers.get('content-type') || 'image/jpeg');
+    res.set('Access-Control-Allow-Origin', '*');
+    res.set('Access-Control-Allow-Methods', 'GET');
+    res.set('Access-Control-Allow-Headers', 'Content-Type');
+
+    // Stream the image data
+    const buffer = await response.arrayBuffer();
+    res.send(Buffer.from(buffer));
+  } catch (error) {
+    console.error('Error proxying image:', error);
+    res.status(500).json({ error: 'Failed to fetch image', details: error.message });
+  }
+});
+
 app.all("*", reactRouterHandler);
 
 

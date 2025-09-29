@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(taskkill:*)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "WebFetch(domain:shadcn-ui-sidebar.salimi.my)",
+      "WebFetch(domain:api.github.com)",
+      "Bash(netstat:*)",
+      "Bash(findstr:*)",
+      "Bash(npm install:*)",
+      "Bash(npm run dev:*)",
+      "Bash(npm run typecheck:*)",
+      "Bash(find:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
