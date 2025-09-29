@@ -1,0 +1,1 @@
+INSERT INTO "public"."roles" ("id", "role", "description") VALUES ('0986479e-abb5-450d-9ad0-c7419bc94780', 'moderator', null), ('b4a52cb0-fcda-4466-846e-5e0e3414431b', 'admin', null), ('d1891df6-105c-4f57-a712-95897916c8f2', 'viewer', null);

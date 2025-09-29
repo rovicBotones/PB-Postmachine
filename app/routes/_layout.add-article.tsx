@@ -1,7 +1,7 @@
 import type { Route } from "./+types/_layout.add-article";
 import { isAuthenticated } from "utils/auth.service";
 import { toast } from "sonner";
-import { redirect } from "react-router";
+import { redirect, useNavigate } from "react-router";
 import { useState, useCallback, useEffect } from "react";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
@@ -10,6 +10,17 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Label } from "~/components/ui/label";
 import { X, Upload, Plus } from "lucide-react";
+import { FaSpinner } from "react-icons/fa";
+import {
+  Credenza,
+  CredenzaBody,
+  CredenzaClose,
+  CredenzaContent,
+  CredenzaFooter,
+  CredenzaHeader,
+  CredenzaTitle,
+  CredenzaTrigger,
+} from "~/components/ui/credenza";
 
 export async function clientLoader({
   params, request
@@ -44,9 +55,10 @@ interface DragDropZoneProps {
   file: File | null;
   index: number;
   canRemoveField?: boolean;
+  formId?: string; // Add formId to make file inputs unique across forms
 }
 
-function DragDropZone({ onFilesChange, onRemoveField, file, index, canRemoveField }: DragDropZoneProps) {
+function DragDropZone({ onFilesChange, onRemoveField, file, index, canRemoveField, formId }: DragDropZoneProps) {
   const [isDragOver, setIsDragOver] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
@@ -157,12 +169,12 @@ function DragDropZone({ onFilesChange, onRemoveField, file, index, canRemoveFiel
           type="file"
           onChange={handleFileInput}
           className="hidden"
-          id={`file-upload-${index}`}
+          id={`file-upload-${formId}-${index}`}
         />
         <Button
           type="button"
           variant="outline"
-          onClick={() => document.getElementById(`file-upload-${index}`)?.click()}
+          onClick={() => document.getElementById(`file-upload-${formId}-${index}`)?.click()}
         >
           Select File
         </Button>
@@ -339,17 +351,18 @@ function ArticleFormComponent({
                 )}
               </div>
               <DragDropZone
-                onFilesChange={(file, idx) => {
+                onFilesChange={(file, attachmentIndex) => {
                   const newAttachments = [...form.attachments];
                   if (file) {
-                    newAttachments[idx] = file;
+                    newAttachments[attachmentIndex] = file;
                   } else {
-                    newAttachments.splice(idx, 1);
+                    newAttachments.splice(attachmentIndex, 1);
                   }
                   onUpdate(form.id, { attachments: newAttachments });
                 }}
                 file={form.attachments[index] || null}
                 index={index}
+                formId={form.id}
               />
             </div>
           ))}
@@ -375,6 +388,7 @@ function ArticleFormComponent({
                 }}
                 file={form.tabloidImage || null}
                 index={-1} // Use -1 for tabloid image
+                formId={form.id}
               />
             </div>
           </div>
@@ -395,6 +409,8 @@ const convertToUTC8ISO = (dateTimeLocal: string) => {
 };
 
 export default function AddArticle() {
+  const navigate = useNavigate();
+
   const [forms, setForms] = useState<ArticleForm[]>([
     {
       id: crypto.randomUUID(),
@@ -410,6 +426,8 @@ export default function AddArticle() {
 
   const [wpCategories, setWpCategories] = useState<WordPressCategory[]>([]);
   const [categoriesLoading, setCategoriesLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
 
   // Fetch WordPress categories on component mount
   useEffect(() => {
@@ -475,8 +493,11 @@ export default function AddArticle() {
     setForms(forms.filter(form => form.id !== id));
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleConfirmSubmit = () => {
+    setShowConfirmModal(true);
+  };
+
+  const handleSubmit = async () => {
 
     // Validate forms
     const invalidForms = forms.filter(form => {
@@ -515,7 +536,8 @@ export default function AddArticle() {
     }
 
     try {
-      toast.info("Submitting articles to WordPress...");
+      setIsSubmitting(true);
+      toast.info("Submitting...");
 
       const wpPassword = import.meta.env.VITE_WP_APP_PASSWORD;
       const wpUsername = import.meta.env.VITE_WP_APP_USERNAME || 'admin';
@@ -532,7 +554,6 @@ export default function AddArticle() {
       for (const form of forms) {
         // First, upload media files if any
         const mediaIds: number[] = [];
-        let tabloidImageId: number | null = null;
 
         // Upload regular attachments
         for (const file of form.attachments) {
@@ -553,25 +574,7 @@ export default function AddArticle() {
           }
         }
 
-        // Upload tabloid image if exists (for Showbiz category)
-        if (form.tabloidImage) {
-          const tabloidFormData = new FormData();
-          tabloidFormData.append('file', form.tabloidImage);
-
-          const tabloidResponse = await fetch(`${wpBaseUrl}/wp-json/wp/v2/media`, {
-            method: 'POST',
-            headers: {
-              'Authorization': authHeader,
-            },
-            body: tabloidFormData
-          });
-
-          if (tabloidResponse.ok) {
-            const tabloidResult = await tabloidResponse.json();
-            tabloidImageId = tabloidResult.id;
-            console.log(`Tabloid image uploaded with ID: ${tabloidImageId}`);
-          }
-        }
+        // Note: Tabloid image will be uploaded after post creation to associate it with the post
 
         // Create the post first
         const postData = {
@@ -600,7 +603,7 @@ export default function AddArticle() {
         console.log(`Post created:`, result);
 
         // Add custom fields if we have images
-        if (mediaIds.length > 0 || tabloidImageId) {
+        if (mediaIds.length > 0) {
           const postId = result.id;
 
           // Set article_thumb from first regular attachment
@@ -648,45 +651,28 @@ export default function AddArticle() {
             }
           }
 
-          // Set tabloid_image custom field if tabloid image exists
-          if (tabloidImageId) {
-            const tabloidDetailsResponse = await fetch(`${wpBaseUrl}/wp-json/wp/v2/media/${tabloidImageId}`, {
-              method: 'GET',
+          // Upload and associate tabloid image with the post if it exists
+          if (form.tabloidImage) {
+            console.log(`Uploading tabloid image for post ${postId}...`);
+
+            const tabloidFormData = new FormData();
+            tabloidFormData.append('file', form.tabloidImage);
+            tabloidFormData.append('post', postId.toString()); // Associate with the post
+
+            const tabloidResponse = await fetch(`${wpBaseUrl}/wp-json/wp/v2/media`, {
+              method: 'POST',
               headers: {
                 'Authorization': authHeader,
               },
+              body: tabloidFormData
             });
 
-            if (tabloidDetailsResponse.ok) {
-              const tabloidDetails = await tabloidDetailsResponse.json();
-              const tabloidUrl = tabloidDetails.source_url;
-
-              console.log(`Setting tabloid_image for post ${postId} to: ${tabloidUrl}`);
-
-              try {
-                const tabloidResponse = await fetch(`${wpBaseUrl}/wp-json/wp/v2/posts/${postId}`, {
-                  method: 'PUT',
-                  headers: {
-                    'Authorization': authHeader,
-                    'Content-Type': 'application/json',
-                  },
-                  body: JSON.stringify({
-                    meta: {
-                      tabloid_image: tabloidUrl
-                    }
-                  })
-                });
-
-                if (tabloidResponse.ok) {
-                  const result = await tabloidResponse.json();
-                  console.log(`✅ tabloid_image set successfully:`, result.meta?.tabloid_image);
-                } else {
-                  const errorText = await tabloidResponse.text();
-                  console.error(`❌ Failed to set tabloid_image: ${tabloidResponse.status}`, errorText);
-                }
-              } catch (error) {
-                console.error('Error setting tabloid_image:', error);
-              }
+            if (tabloidResponse.ok) {
+              const tabloidResult = await tabloidResponse.json();
+              console.log(`✅ Tabloid image uploaded and associated with post ${postId} (Media ID: ${tabloidResult.id})`);
+            } else {
+              const errorText = await tabloidResponse.text();
+              console.error(`❌ Failed to upload tabloid image: ${tabloidResponse.status}`, errorText);
             }
           }
         }
@@ -706,9 +692,16 @@ export default function AddArticle() {
         tabloidImage: null
       }]);
 
+      // Redirect to home page after successful submission
+      setTimeout(() => {
+        navigate('/home');
+      }, 1500); // Wait 1.5 seconds to allow user to see success message
+
     } catch (error) {
       console.error('Error submitting to WordPress:', error);
-      toast.error("Failed to submit articles to WordPress. Please try again.");
+      toast.error("Failed to submit articles to CMS. Please try again.");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -722,7 +715,7 @@ export default function AddArticle() {
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-8">
+        <form onSubmit={(e) => e.preventDefault()} className="space-y-8">
           {forms.map((form, index) => (
             <ArticleFormComponent
               key={form.id}
@@ -746,9 +739,48 @@ export default function AddArticle() {
               Add Another Article
             </Button>
 
-            <Button type="submit" className="flex items-center gap-2">
-              Submit All Articles
-            </Button>
+            <Credenza open={showConfirmModal} onOpenChange={setShowConfirmModal}>
+              <CredenzaTrigger asChild>
+                <Button type="button" disabled={isSubmitting} className="flex items-center gap-2">
+                  {isSubmitting ? (
+                    <>
+                      <FaSpinner className="animate-spin mr-2 h-4 w-4" />
+                      Submitting...
+                    </>
+                  ) : (
+                    'Submit All Articles'
+                  )}
+                </Button>
+              </CredenzaTrigger>
+              <CredenzaContent className="w-[95vw] max-w-md">
+                <CredenzaHeader>
+                  <CredenzaTitle>Submit Articles</CredenzaTitle>
+                </CredenzaHeader>
+                <CredenzaBody>
+                  Do you want to submit{" "}
+                  <b className="text-blue-600">
+                    {forms.length}
+                  </b>{" "}
+                  {forms.length > 1 ? "articles" : "article"}?
+                </CredenzaBody>
+                <CredenzaFooter className="flex flex-col sm:flex-row gap-2">
+                  <Button
+                    variant="go"
+                    onClick={() => {
+                      setShowConfirmModal(false);
+                      handleSubmit();
+                    }}
+                    disabled={isSubmitting}
+                    className="w-full sm:w-auto"
+                  >
+                    Yes
+                  </Button>
+                  <CredenzaClose asChild>
+                    <Button className="w-full sm:w-auto">No</Button>
+                  </CredenzaClose>
+                </CredenzaFooter>
+              </CredenzaContent>
+            </Credenza>
           </div>
         </form>
       </div>

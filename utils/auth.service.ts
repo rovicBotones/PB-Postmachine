@@ -23,6 +23,18 @@ export const singInService = async (
       email: email,
       password: password
     })
+
+    // Notify session timeout manager that user logged in
+    if (data?.session && !error) {
+        // Trigger session refresh event
+        const event = new CustomEvent('user-login', {
+            detail: { session: data.session, user: data.user }
+        });
+        if (typeof window !== 'undefined') {
+            window.dispatchEvent(event);
+        }
+    }
+
     return { data, error };
 }
 
