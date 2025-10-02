@@ -9,6 +9,11 @@ import { isAuthenticated, session } from "utils/auth.service";
 import { getUserRole } from "utils/users.service";
 import { fetchUserPermissions } from "utils/role.service";
 import { toast } from "sonner";
+import { downloadExcelTemplate, parseExcelFile, type CaseData } from "~/utils/excel-template";
+import { generatePDFFromTemplate, downloadPDF } from "~/utils/pdf-generator";
+import { Input } from "~/components/ui/input";
+import { Label } from "~/components/ui/label";
+import { Upload } from "lucide-react";
 import {
   Credenza,
   CredenzaBody,
@@ -192,6 +197,12 @@ export default function Home({ loaderData }: Route.ComponentProps) {
   const [selectedPosts, setSelectedPosts] = React.useState<Set<string>>(new Set());
   const [postsWithImagesCount, setPostsWithImagesCount] = React.useState(0);
   const [checkingImages, setCheckingImages] = React.useState(false);
+
+  // PDF Export modal states
+  const [pdfModalOpen, setPdfModalOpen] = React.useState(false);
+  const [uploadedFile, setUploadedFile] = React.useState<File | null>(null);
+  const [parsedCases, setParsedCases] = React.useState<CaseData[]>([]);
+  const [isProcessing, setIsProcessing] = React.useState(false);
 
   // Check if we're loading due to navigation (filter changes)
   const isFilterLoading = navigation.state === "loading";
@@ -473,6 +484,81 @@ export default function Home({ loaderData }: Route.ComponentProps) {
   };
   console.log("ROLE: ", posts.role);
   console.log("PERMISSIONS: ", posts.permissions);
+  const handlePdfExport = async () => {
+    setPdfModalOpen(true);
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.name.endsWith('.xlsx') && !file.name.endsWith('.xls')) {
+      toast.error('Please upload an Excel file (.xlsx or .xls)');
+      return;
+    }
+
+    setUploadedFile(file);
+    setIsProcessing(true);
+
+    try {
+      const cases = await parseExcelFile(file);
+      setParsedCases(cases);
+      toast.success(`Parsed ${cases.length} cases from Excel file`);
+    } catch (error) {
+      console.error('Error parsing Excel file:', error);
+      toast.error('Failed to parse Excel file. Please check the format.');
+      setUploadedFile(null);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleDownloadTemplate = () => {
+    downloadExcelTemplate();
+    toast.success('Template downloaded successfully');
+  };
+
+  const handleGeneratePDF = async () => {
+    if (!uploadedFile || parsedCases.length === 0) {
+      toast.error('Please upload an Excel file first');
+      return;
+    }
+
+    setIsProcessing(true);
+    try {
+      toast.info('Generating PDF with case data...');
+      console.log('Case data for PDF:', parsedCases);
+
+      // Generate PDF from template with case data
+      const pdfBytes = await generatePDFFromTemplate(parsedCases);
+
+      // Download the generated PDF
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
+      downloadPDF(pdfBytes, `cases_${timestamp}.pdf`);
+
+      toast.success(`PDF generated successfully with ${parsedCases.length} case(s)!`);
+      setPdfModalOpen(false);
+      setUploadedFile(null);
+      setParsedCases([]);
+    } catch (error: any) {
+      console.error('Error generating PDF:', error);
+      let errorMessage = 'Failed to generate PDF. ';
+
+      if (error.message?.includes('Failed to load template')) {
+        errorMessage += 'Template file not found. Please ensure template.pdf is in public/templates/ folder.';
+      } else if (error.message?.includes('404')) {
+        errorMessage += 'Template file not found at /templates/template.pdf';
+      } else {
+        errorMessage += error.message || 'Please check console for details.';
+      }
+
+      toast.error(errorMessage);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
   return (
     <>
       <div className="p-4 sm:p-6 lg:p-8">
@@ -486,6 +572,15 @@ export default function Home({ loaderData }: Route.ComponentProps) {
               disabled={selectedPosts.size === 0}
             >
               Export CSV ({selectedPosts.size} selected)
+            </Button>
+          </div>
+          <div className="w-full">
+            <Button
+              variant={"default"}
+              onClick={handlePdfExport}
+              className="w-full"
+            >
+              Export to PDF
             </Button>
           </div>
           {posts.permissions?.canAddArticle ? (
@@ -669,6 +764,125 @@ export default function Home({ loaderData }: Route.ComponentProps) {
             }}
           />
         </div>
+
+        {/* PDF Export Modal */}
+        <Credenza open={pdfModalOpen} onOpenChange={setPdfModalOpen}>
+          <CredenzaContent className="w-[95vw] max-w-2xl">
+            <CredenzaHeader>
+              <CredenzaTitle>Export to PDF</CredenzaTitle>
+              <CredenzaDescription>
+                Upload an Excel file with case data to generate PDF documents
+              </CredenzaDescription>
+            </CredenzaHeader>
+
+            <CredenzaBody className="space-y-4">
+              {/* Download Template Button */}
+              <div className="flex items-center justify-between p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                <div>
+                  <h4 className="font-medium text-blue-900">Need a template?</h4>
+                  <p className="text-sm text-blue-700">Download our Excel template with sample data</p>
+                </div>
+                <Button
+                  onClick={handleDownloadTemplate}
+                  variant="outline"
+                  size="sm"
+                  className="border-blue-300 hover:bg-blue-100"
+                >
+                  Download Template
+                </Button>
+              </div>
+
+              {/* File Upload */}
+              <div className="space-y-2">
+                <Label htmlFor="excel-upload">Upload Excel File</Label>
+                <div className="flex flex-col gap-3">
+                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-gray-400 transition-colors">
+                    <input
+                      type="file"
+                      id="excel-upload"
+                      accept=".xlsx,.xls"
+                      onChange={handleFileUpload}
+                      className="hidden"
+                      disabled={isProcessing}
+                    />
+                    <label
+                      htmlFor="excel-upload"
+                      className="cursor-pointer flex flex-col items-center space-y-2"
+                    >
+                      <Upload className="h-10 w-10 text-gray-400" />
+                      <p className="text-sm text-gray-600">
+                        Click to upload Excel file
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        Supports .xlsx and .xls files
+                      </p>
+                    </label>
+                  </div>
+
+                  {uploadedFile && (
+                    <div className="p-3 bg-green-50 border border-green-200 rounded-md">
+                      <p className="text-sm text-green-800">
+                        <strong>File:</strong> {uploadedFile.name}
+                      </p>
+                      {parsedCases.length > 0 && (
+                        <p className="text-sm text-green-700 mt-1">
+                          <strong>Cases found:</strong> {parsedCases.length}
+                        </p>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Preview parsed data */}
+              {parsedCases.length > 0 && (
+                <div className="space-y-2">
+                  <Label>Preview (First 5 cases)</Label>
+                  <div className="border rounded-md overflow-hidden">
+                    <table className="w-full text-sm">
+                      <thead className="bg-gray-100">
+                        <tr>
+                          <th className="px-3 py-2 text-left">Case No.</th>
+                          <th className="px-3 py-2 text-left">Name</th>
+                          <th className="px-3 py-2 text-left">Date of Hearing</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {parsedCases.slice(0, 5).map((caseData, index) => (
+                          <tr key={index} className="border-t">
+                            <td className="px-3 py-2">{caseData.caseno}</td>
+                            <td className="px-3 py-2">{caseData.name}</td>
+                            <td className="px-3 py-2">{caseData.dateofhearing}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                    {parsedCases.length > 5 && (
+                      <div className="px-3 py-2 bg-gray-50 text-xs text-gray-600 text-center">
+                        And {parsedCases.length - 5} more cases...
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </CredenzaBody>
+
+            <CredenzaFooter className="flex flex-col sm:flex-row gap-2">
+              <Button
+                onClick={handleGeneratePDF}
+                disabled={!uploadedFile || parsedCases.length === 0 || isProcessing}
+                className="w-full sm:w-auto"
+              >
+                {isProcessing ? 'Processing...' : 'Generate PDF'}
+              </Button>
+              <CredenzaClose asChild>
+                <Button variant="outline" className="w-full sm:w-auto" disabled={isProcessing}>
+                  Cancel
+                </Button>
+              </CredenzaClose>
+            </CredenzaFooter>
+          </CredenzaContent>
+        </Credenza>
       </div>
     </>
   );
