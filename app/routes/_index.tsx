@@ -4,7 +4,7 @@ import type { Route } from "./+types/_index";
 export function clientLoader({
   params,
 }: Route.ClientLoaderArgs) {
- 
+
  return redirect("/login");
 }
 export default function Index() {

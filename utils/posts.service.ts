@@ -206,6 +206,9 @@ export const getAllData = async (filter: FilterDto) => {
           const decoded = decodeHtmlEntities(post.content.rendered);
           const plain = stripHtmlTags(decoded);
 
+          // Get featured image
+          const featuredImage = post._embedded?.['wp:featuredmedia']?.[0]?.source_url || '';
+
           datas.push({
             Id: post.id.toString(),
             Date: new Date(post.date).toLocaleDateString('en-US'),
@@ -213,7 +216,8 @@ export const getAllData = async (filter: FilterDto) => {
             Title: post.title.rendered,
             Author: "Peoples Balita",
             Content: plain,
-            Status: "Published"
+            Status: "Published",
+            FeaturedImage: featuredImage
           });
           console.log(`   ✅ ADDED to results: ${post.title.rendered}`);
         });
@@ -239,6 +243,9 @@ export const getAllData = async (filter: FilterDto) => {
           const decoded = decodeHtmlEntities(post.content.rendered);
           const plain = stripHtmlTags(decoded);
 
+          // Get featured image
+          const featuredImage = post._embedded?.['wp:featuredmedia']?.[0]?.source_url || '';
+
           datas.push({
             Id: post.id.toString(),
             Date: new Date(post.date).toLocaleDateString('en-US'),
@@ -246,7 +253,8 @@ export const getAllData = async (filter: FilterDto) => {
             Title: post.title.rendered,
             Author: "Peoples Balita",
             Content: plain,
-            Status: "Draft"
+            Status: "Draft",
+            FeaturedImage: featuredImage
           });
           console.log(`   ✅ ADDED to results: ${post.title.rendered}`);
         });
